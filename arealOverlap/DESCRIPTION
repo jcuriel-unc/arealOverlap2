@@ -1,0 +1,31 @@
+Package: arealOverlap
+Title: Areal interpolation through population overlap of polygon shapefiles. 
+Version: 0.0.0.9000
+Authors@R: c(person("John", "Curiel", role = c("aut", "trl", "cre"),
+		    email = "jcuriel.unc@gmail.com")
+             person("Tyler", "Steelman", role = c("aut", "trl"),
+                    email = "tsteelman@unc.edu"))
+Description: The arealOverlap package works to solve how to weight population and sociodemographic data related to 
+    polygon shapefile data that is non-nested. The process works by taking in the input from an ArcGIS python toolbox 
+    output, or similarly outputted data, which is the three way intersection between two shapefiles of interest, and a 
+    census tabulation shapefile. The resulting data informs the user as to how to measure change or shared population
+    characteristics between different levels/temporal states of geography, in addition to how complex the process is. 
+    The primary script works by weighting the subsetted space between geographic unit A and B relative to their shared 
+    overlap between a census tabulation unit. The population of the unit are then weighted by the three-way intersection
+    and the area of the census tabulation unit. Data are then marginalized by dyad, areal unit 1 and areal unit 2, in 
+    order to inform the user the shared dyadic population, and how fragile the data of interest is to multilevel areal
+    unit problems (MAUP). Functions include a dyadic calculator to find the overlap between all first and second shapefiles with at least
+    some population overlap, a herfindahl index calculator that reports how split up the first level of georaphy is
+    a function to find the best match between the first and second geographies by knowing the maximum population 
+    overlap, and finally a function that calculates what proportion of the second level of geography's population
+    could be correctly matched by knowing assigning the first level of geography to the second level of geography 
+    based on the maximum population overlap. 	
+Depends: R (>= 2.12.0)
+Imports: dplyr, foreign, tidyr, stats
+License: General 
+Author: John Curiel [aut, trl, cre] (S original),
+  Tyler Steelman [aut, trl]
+Maintainer: John Curiel <jcuriel.unc@gmail.com>
+Encoding: UTF-8
+Date/Publication: 2019-06-05 11:04:00 UTC
+RoxygenNote: 6.1.1
