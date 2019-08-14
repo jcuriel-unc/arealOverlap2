@@ -1,0 +1,447 @@
+import arcpy
+import pandas 
+
+class Toolbox(object):
+    def __init__(self):
+        """Define the toolbox (the name of the toolbox is the name of the
+        .pyt file)."""
+        self.label = "Toolbox"
+        self.alias = ""
+
+        # List of tool classes associated with this toolbox
+        self.tools = [areal_interpolation_sub]
+
+class areal_interpolation_sub(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Sub national pop. overlap calculator"
+        self.description = "Areal interpolation, for subnational geographies"
+        self.canRunInBackground = False
+
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        param0 = arcpy.Parameter(displayName="Enter first shapefile",
+                                 name = "First feature class",
+                                 datatype="DEShapefile",
+                                 parameterType="Required",
+                                 direction="input")
+        param1 = arcpy.Parameter(displayName="Enter census block shapefile",
+                                 name = "Census feature class",
+                                 datatype="DEShapefile",
+                                 parameterType="Required",
+                                 direction="input")
+        
+        param2 = arcpy.Parameter(displayName="Enter second shpfile",
+                                 name = "Second feature class",
+                                 datatype="DEShapefile",
+                                 parameterType="Required",
+                                 direction="input")
+        
+        param3 = arcpy.Parameter(displayName = "Choose a workspace.\n",
+                                 name = "Work space",
+                                 datatype = "DEWorkspace",
+                                 parameterType = "Required",
+                                 direction = "Input")
+        param4 = arcpy.Parameter(displayName="Subnation code for CBGs Field",
+                                 name="CBG_State",
+                                 datatype="Field",
+                                 parameterType="Optional",
+                                 direction="Input")
+
+    # Set the filter to accept only fields that are Short, Double, or Long type
+        param4.filter.list = []
+        param4.parameterDependencies = [param1.name]
+        
+        param5 = arcpy.Parameter(displayName="CRS reference shapefile",
+                                 name = "CRS reference",
+                                 datatype="DEShapefile",
+                                 parameterType="Optional",
+                                 direction="input")
+        param6 = arcpy.Parameter(displayName="Field for Pop Data",
+                                 name="pop_field",
+                                 datatype="Field",
+                                 parameterType="Required",
+                                 direction="Input")
+
+    # Set the filter to accept only fields that are Short, Double, or Long type
+        param6.filter.list = ['Short', 'Long', 'Double']
+        param6.parameterDependencies = [param1.name]
+
+        param7 = arcpy.Parameter(displayName="Subnation field for second shpfile",
+                                 name="Second states",
+                                 datatype="Field",
+                                 parameterType="Optional",
+                                 direction="Input")
+
+    # Set the filter to accept only fields that are Short, Double, or Long type
+        param7.filter.list = []
+        param7.parameterDependencies = [param2.name]
+
+        param8 = arcpy.Parameter(
+            displayName="State",
+            name="state",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
+
+        # Set a value list of States (and other US areas)
+        param8.filter.type = "ValueList"
+        param9 = arcpy.Parameter(displayName="Chosen CBG Subnational unit",
+                                 name="CBG State Choice",
+                                 datatype="GPString",
+                                 parameterType="Optional",
+                                 direction="Input")
+        param9.filter.type = "ValueList"
+
+        param10 = arcpy.Parameter(displayName="ID Field for First Shapefile",
+                                 name="ID1_field",
+                                 datatype="Field",
+                                 parameterType="Required",
+                                 direction="Input")
+        param10.filter.list = []
+        param10.parameterDependencies = [param0.name]
+        
+        param11 = arcpy.Parameter(displayName="ID Field for Second Shapefile",
+                                 name="ID2_field",
+                                 datatype="Field",
+                                 parameterType="Required",
+                                 direction="Input")
+        param11.filter.list = []
+        param11.parameterDependencies = [param2.name]
+        
+      #  param12 = arcpy.Parameter(displayName = "Choose a GDB.\n",
+       #                          name = "GDB",
+        #                         datatype = "DEWorkspace",
+         #                        parameterType = "Required",
+          #                       direction = "Input")
+        
+        
+        params = [param0,param1,param2,param3,param4,param5,param6,param7,param8,param9,param10,param11]
+        return params
+    #Produced by John A. Curiel and Tyler S. Steelman of UNC-Chapel Hill
+##ARCgis resources Addjoin
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        if parameters[4].value:
+            if parameters[1].value:  
+                with arcpy.da.SearchCursor(parameters[1].valueAsText, parameters[4].valueAsText) as rows:  
+                    parameters[9].filter.list = sorted(list(set([row[0] for row in rows])))  
+            else:  
+                parameters[9].filter.list = []
+
+        else:
+            arcpy.AddMessage("No optional data provided")
+
+        if parameters[7].value:
+            if parameters[2].value:  
+                with arcpy.da.SearchCursor(parameters[2].valueAsText, parameters[7].valueAsText) as rows:  
+                    parameters[8].filter.list = sorted(list(set([row[0] for row in rows]))) 
+            else:  
+                parameters[8].filter.list = []
+
+        else:
+            arcpy.AddMessage("No optional data provided")
+
+
+        #if parameters[2].value:  
+         #   with arcpy.da.SearchCursor(parameters[2].valueAsText, parameters[7].valueAsText) as rows:  
+        #else:  
+        #    parameters[8].filter.list = []  
+#arcpy.Exists
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        ##Local variables for use
+        ##use describe function in order to find out if important values and attributes are present 
+        work = str(parameters[3].value)
+        arcpy.env.workspace = work
+        arcpy.env.overwriteOutput = True
+        #gdb = str(parameters[12].value)
+
+        
+        state_leg = str(parameters[0].value)
+        CBShp = str(parameters[1].value)
+        US_shp = str(parameters[2].value)
+        fips = str(parameters[9].value)
+        crs1 = str(parameters[5].value)
+        cd_pop = str(parameters[6].value)
+        cbg_state_field = str(parameters[4].value)
+        cd_state_field = str(parameters[7].value) 
+        cd_state_name = str(parameters[8].value)
+        shp1_id = str(parameters[10].value)
+        cd_id = str(parameters[11].value)
+        
+        # Local variables:
+        st_cb_shp = "stateCBshp.shp" #selection of state blocks for union
+        #out_coord = arcpy.SpatialReference('GCS_North_American_1983_HARN')
+        out_coord2 = "GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]]"
+        USPrj = "US_prj.shp"
+        st_us_shp = "stateUSshp.shp" #selection of state CDs for union
+
+ 
+        sLegPrj = "state_leg_prj.shp"
+        CBPrj = "CB_prj.shp"
+        allMerge1 = "all_merge1.shp"
+        allMerge2 = "all_merge2.shp"
+        allMerge4 = "all_merge4.dbf"
+
+        overlapDBF = "overlap_final.dbf"
+        if parameters[4].value:
+            arcpy.AddMessage("Optional subnation data provided")
+                    #syntax for select
+            syn = "\"" + cbg_state_field + "\""  + " = "  + "'" + fips + "'"
+            arcpy.Select_analysis(CBShp, st_cb_shp, syn)
+            arcpy.AddMessage("State selected for CBG")
+
+            arcpy.Project_management(st_cb_shp, CBPrj, out_coord2,"","","","")
+            arcpy.AddMessage("Projection of CBG data complete")
+
+
+        else:
+            arcpy.AddMessage("No optional data provided")
+            arcpy.Project_management(CBShp, CBPrj, out_coord2,"","","","")
+            arcpy.AddMessage("Projection of CBG (non-subnation) data complete")
+
+        if parameters[7].value:
+            arcpy.AddMessage("Optional subnation data provided")
+        #syntax for select
+            synST3 = "\"" + cd_state_field + "\""  + " = " + "'" + cd_state_name + "'"
+       
+
+            ##select state
+            arcpy.Select_analysis(US_shp, st_us_shp, synST3)
+            arcpy.AddMessage("State Selected for Congressional Districts")
+            ##projecting the selected state
+        
+            arcpy.Project_management(st_us_shp, USPrj, out_coord2,"","","","")
+            arcpy.AddMessage("Projection of selected state CD data complete")
+        
+        else:
+            arcpy.AddMessage("No optional data provided")
+            arcpy.Project_management(US_shp, USPrj, out_coord2,"","","","")
+            arcpy.AddMessage("Projection of CD (non-subnation) data complete")
+            
+
+        ##code to optionally read in the substate data
+        if parameters[5].value:
+            arcpy.AddMessage("Optional data provided")
+            spatial_ref = arcpy.Describe(crs1).spatialReference
+            arcpy.DefineProjection_management(state_leg, spatial_ref)
+            arcpy.AddMessage("Defined CRS")
+
+        else:
+            arcpy.AddMessage("No optional data provided")
+        
+        arcpy.AddMessage("Finished defining projection")
+        
+        # Process: Select
+
+
+        #synST = "\"STATEFP\" = " + "'" + fips + "'" 
+        
+
+        #define projection to outcoord 2 for both state files 
+        arcpy.DefineProjection_management(state_leg, out_coord2)
+        #state legislature projection 
+        arcpy.Project_management(state_leg, sLegPrj, out_coord2,"","","","")
+        arcpy.AddMessage("Projection of state leg data complete")
+
+        ##By this point, all three files should be projected 
+
+
+       ##calculate area for all files
+        arcpy.AddField_management(sLegPrj, "L_AREA", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.AddMessage("L_AREA field added")
+
+        arcpy.CalculateField_management(sLegPrj, "L_AREA", "\"!SHAPE.AREA@SQUAREFEET!\"", "PYTHON", "")
+        arcpy.AddMessage("L_AREA field calculated")
+
+        arcpy.AddField_management(CBPrj, "CB_AREA", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.AddMessage("CB_AREA field added")
+
+        arcpy.CalculateField_management(CBPrj, "CB_AREA", "\"!SHAPE.AREA@SQUAREFEET!\"", "PYTHON", "")
+        arcpy.AddMessage("CB_AREA field calculated")
+
+        ##U.S. CD area calculations 
+
+        arcpy.AddField_management(USPrj, "USH_AREA", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.AddMessage("CB_AREA field added")
+
+        arcpy.CalculateField_management(USPrj, "USH_AREA", "\"!SHAPE.AREA@SQUAREFEET!\"", "PYTHON", "")
+        arcpy.AddMessage("USH_AREA field calculated")
+        
+        #combo for union input
+        union_input1 = sLegPrj + " #;" + CBPrj + " #"
+        
+        # Process: Union
+        arcpy.Union_analysis(union_input1, allMerge1, "ALL", "", "GAPS")
+        arcpy.AddMessage("Union complete between state leg. and CBGs")
+
+        # Execute SelectLayerByAttribute to determine which rows to delete
+        arcpy.MakeFeatureLayer_management(allMerge1,"CBG_Leg_Layer")
+
+        arcpy.SelectLayerByAttribute_management("CBG_Leg_Layer", "NEW_SELECTION", '"FID_state_" <> -1 AND "FID_CB_prj" <> -1')
+        arcpy.CopyFeatures_management("CBG_Leg_Layer", allMerge2)
+        arcpy.AddMessage("Cleaned CBG_Leg_Layer shp file copied")
+        
+        # Process: Add Field for area
+        arcpy.AddField_management(allMerge2, "CBGL_AREA", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.AddMessage("CBGL_AREA field added")
+
+        # Process: Calculate Field
+        arcpy.CalculateField_management(allMerge2, "CBGL_AREA", "\"!SHAPE.AREA@SQUAREFEET!\"", "PYTHON", "")
+        arcpy.AddMessage("CBGL_AREA field calculated")
+        union_input2 = allMerge2 + " #;" + USPrj + " #"
+                ##final union
+        allMerge3 = "all_merge3.shp"
+        arcpy.Union_analysis(union_input2, allMerge3, "ALL", "", "GAPS")
+        arcpy.AddMessage("Union complete")
+                #final area calculation
+        arcpy.AddField_management(allMerge3, "INT_AREA", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(allMerge3, "INT_AREA", "\"!SHAPE.AREA@SQUAREFEET!\"", "PYTHON", "")
+        arcpy.AddMessage("Area overlap between CD, CBG and ZIP codes calculated")
+        arcpy.MakeFeatureLayer_management(allMerge3,"final_drop")
+        arcpy.SelectLayerByAttribute_management("final_drop", "NEW_SELECTION", '"FID_all_me" <> -1 AND CBGL_AREA > 0 AND FID_US_prj <> -1')
+        arcpy.CopyFeatures_management("final_drop", allMerge4)
+        arcpy.AddMessage("Cleaned CBG_Leg_Layer shp file copied")
+
+        ##need to calculate overlap. First step is to weight the population and create the dyad ID field
+
+        ##adding ID field
+        ## "!STATE_FIPS!+ !NAME!+ !ID!"
+        # "!STATE_FIPS!+\"_\"+ !NAME!+\"_\"+ !ID!"
+
+        #syn_dyad1 = "'" + "!" + cbg_state_field + "!" + " " + "!" + shp1_id + "!"  + "'" 
+        #syn_dyad2 = "'" + "!" + cbg_state_field + "!" + " " + "!" + shp1_id + "!" + " " + "!" + cd_id + "!" + "'"
+        syn_dyad1 = "!" + cbg_state_field + "!" + " " + "!" + shp1_id + "!" 
+        syn_dyad2 = "!" + cbg_state_field + "!" + " " + "!" + shp1_id + "!" + " " + "!" + cd_id + "!"
+
+        arcpy.AddField_management(allMerge4, "DYAD_ID1", "TEXT", "#", "#", 80, "#", "#", "#", "#")
+        #        arcpy.AddField_management(allMerge4, "DYAD_ID1", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(allMerge4, "DYAD_ID1", syn_dyad1, "PYTHON")
+        arcpy.AddField_management(allMerge4, "DYAD_ID2", "TEXT", "#", "#", 80, "#", "#", "#", "#")
+        arcpy.CalculateField_management(allMerge4, "DYAD_ID2", syn_dyad2, "PYTHON")
+        arcpy.AddMessage("Dyad IDs created.")
+
+        ##calculating the three levels of overlap
+        arcpy.AddField_management(allMerge4, "OVERLAP1", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(allMerge4, "OVERLAP1", "!INT_AREA!/!CB_AREA!" , "PYTHON", "")
+        #arcpy.AddField_management(allMerge4, "OVERLAP2", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        #arcpy.CalculateField_management(allMerge4, "OVERLAP2", "!INT_AREA!/!CBGL_AREA! " , "PYTHON", "")
+        #arcpy.AddField_management(allMerge4, "OVERLAP3", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+       # arcpy.CalculateField_management(allMerge4, "OVERLAP3", "!L_AREA!/!CB_AREA!" , "PYTHON", "")
+        #         #arcpy.AddField_management(r"shpdyadsum_table.dbf", "shortText1", "#", "#", 75, "#", "#", "#", "#")
+                                      
+        arcpy.AddMessage("Three overlap variables calculated")
+        ref_cd = "!" + cd_id + "!"
+        ##NOTE: I am now going to create a new CD ID var just to make things easier. It is just another column
+        arcpy.AddField_management(allMerge4, "CD_ID", "TEXT", "#", "#", 80, "#", "#", "#", "#")
+        arcpy.CalculateField_management(allMerge4, "CD_ID", ref_cd, "PYTHON", "")
+        #pop wt syntax
+        syn_calc = "!" + cd_pop + "!" + "*" + "!OVERLAP1!" 
+        ##weighting pop; will then summarize by dyadic id
+        arcpy.AddField_management(allMerge4, "POPwt", "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(allMerge4, "POPwt", syn_calc, "PYTHON", "")
+        pop_syn = "'"+cd_pop +"'"
+        ## Process: Summary Statistics
+        statsFields = [["POPwt","SUM"]]
+        statsFieldsDyad = [["POPwt","SUM"],["CD_ID","FIRST"],["DYAD_ID1","FIRST"]]
+        #arcpy.env.workspace = gdb
+
+        arcpy.Statistics_analysis(allMerge4, "shp2sum_table.dbf", statsFields, "CD_ID")
+        arcpy.Statistics_analysis(allMerge4, "shp1sum_table.dbf", statsFields, "DYAD_ID1")
+        arcpy.Statistics_analysis(allMerge4, "shpdyadsum_table.dbf", statsFieldsDyad, "DYAD_ID2")
+        #arcpy.ConvertTableToCsvFile("shp2sum_table", "sum_table.csv")
+        #Correct formatting of stats [["Field1", "Sum"], ["Field2", "Sum"], ...]
+        #AddJoin_management (in_layer_or_view, in_field, join_table, join_field, {join_type})
+        #arcpy.env.workspace = gdb
+        ##Problem with creating an index from a long text field
+        #arcpy.AddField_management(r"shpdyadsum_table.dbf", "shortText1", "#", "#", 75, "#", "#", "#", "#")
+        #with arcpy.da.UpdateCursor(r"shpdyadsum_table.dbf", ["FIRST_DYAD", "shortText1"]) as cursor:
+         #   for row in cursor:
+          #      row[1] = row[0]
+           #     cursor.updateCursor(row)
+        arcpy.AddIndex_management(r'shpdyadsum_table.dbf', "FIRST_DYAD")
+        arcpy.AddMessage("First Index added")
+        arcpy.AddIndex_management(r'shp1sum_table.dbf', "DYAD_ID1")
+        arcpy.AddMessage("Second Index added")
+        arcpy.AddIndex_management(r'shp2sum_table.dbf', "CD_ID")
+        arcpy.AddMessage("Third Index added")
+        
+        arcpy.MakeTableView_management("shpdyadsum_table.dbf","temp1", "", "")
+                # Get the fields from the input
+
+        arcpy.MakeTableView_management("shp1sum_table.dbf","temp2", "", "")
+
+        arcpy.MakeTableView_management("shp2sum_table.dbf","temp3", "", "")
+        arcpy.AddJoin_management("temp1","FIRST_DYAD","temp2","DYAD_ID1")
+        arcpy.AddJoin_management("temp1","FIRST_CD_I","temp3","CD_ID")
+        all_table = "all_table1.dbf"
+
+        ##NOTE: I will rename the fields of interest after exporting them 
+
+        arcpy.CopyRows_management("temp1", all_table)
+        # shpdyadsum = DYAD_ID2, shpdyadsum_2 = pop,  shpdyadsum_3 = DYAD_ID1, shpdyadsum_4 = CD_ID, shp1sum__3 = pop2, shp1sum__3 = pop3
+      #  arcpy.AlterField_management("temp1", "shpdyadsum", "DYAD_ID2")
+       # arcpy.AlterField_management("temp1", "shpdyads_2", "POP1")
+        #arcpy.AlterField_management("temp1", "shpdyads_3", "SHP1_ID")
+       # arcpy.AlterField_management("temp1", "shpdyads_4", "SHP2_ID")
+        #arcpy.AlterField_management("temp1", "shp1sum__3", "POP2")
+       # arcpy.AlterField_management("temp1", "shp2sum__3", "POP3")
+       # arcpy.AddMessage("Fields renamed DBF.")
+        #arcpy.CopyRows_management("temp1", all_table)
+        arcpy.AddField_management(all_table, "DYAD_ID", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "DYAD_ID", "!shpdyadsum!" , "PYTHON", "")
+        arcpy.AddField_management(all_table, "SHP2_ID", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "SHP2_ID", "!shpdyads_3!" , "PYTHON", "")
+        arcpy.AddField_management(all_table, "SHP1_ID", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "SHP1_ID", "!shpdyads_4!" , "PYTHON", "")
+        arcpy.AddField_management(all_table, "POP1", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "POP1", "!shpdyads_2!" , "PYTHON", "")
+        arcpy.AddField_management(all_table, "POP2", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "POP2", "!shp1sum__3!" , "PYTHON", "")
+        arcpy.AddField_management(all_table, "POP3", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "POP3", "!shp2sum__3!" , "PYTHON", "")
+
+        ##PCT overlap calcs 
+        arcpy.AddField_management(all_table, "OVER_SHP1", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "OVER_SHP1", "(!POP1!/!POP2!)*100" , "PYTHON", "")
+        arcpy.AddField_management(all_table, "OVER_SHP2", "FLOAT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+        arcpy.CalculateField_management(all_table, "OVER_SHP2", "(!POP1!/!POP3!)*100" , "PYTHON", "")
+        #based on code, want to save last 8 fields
+        arcpy.AddMessage("Population overlap calculated.")
+
+
+        # dropping and keeping relevant fields 
+        fields = arcpy.ListFields(all_table) 
+
+        # manually enter field names to keep here
+        # include mandatory fields name such as OBJECTID (or FID), and Shape in keepfields
+        keepFields = ["OID","DYAD_ID2", "SHP1_ID","SHP2_ID","POP1","POP2","POP3","OVER_SHP1","OVER_SHP2"]
+
+        dropFields = [x.name for x in fields if x.name not in keepFields]
+        # delete fields
+        arcpy.DeleteField_management(all_table, dropFields) 
+        arcpy.AddMessage("Unnecessary fields dropped.")
+
+          #FIRST_DYAD FIRST_CD_I
+
+        arcpy.AddMessage("Merged table written out to DBF.")
+
+
+        return
+
