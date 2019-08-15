@@ -2,7 +2,7 @@ Package: arealOverlap
 Title: Areal interpolation through population overlap of polygon shapefiles. 
 Version: 0.0.0.9000
 Authors@R: c(person("John", "Curiel", role = c("aut", "trl", "cre"),
-		    email = "jcuriel.unc@gmail.com")
+		    email = "jcuriel.unc@gmail.com"),
              person("Tyler", "Steelman", role = c("aut", "trl"),
                     email = "tsteelman@unc.edu"))
 Description: The arealOverlap package works to solve how to weight population and sociodemographic data related to 
