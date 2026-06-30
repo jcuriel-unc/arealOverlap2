@@ -28,4 +28,4 @@ Author: John Curiel [aut, trl, cre] (S original),
 Maintainer: John Curiel <jcuriel.unc@gmail.com>
 Encoding: UTF-8
 Date/Publication: 2026-06-29 11:04:00 UTC
-RoxygenNote: 7.3.3
+Config/roxygen2/version: 8.0.0

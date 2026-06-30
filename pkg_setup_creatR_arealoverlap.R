@@ -1,4 +1,6 @@
 ### Script to create the yougov ext set up 
+rm(list=ls()); gc(); 
+
 install.packages(c("devtools", "roxygen2"))  # install dependecies if not already here 
 library("devtools")
 #library("roxygen2")
