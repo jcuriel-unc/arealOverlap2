@@ -43,35 +43,43 @@ overlapfunction <- function(filename1a, id1, id2, pop_field, merge_table,  merge
     temp_dbf <- filename1a
   }else{temp_dbf <- read.dbf(filename1a)}
   
+  ## check if areal_weight in data 
+  check_weight = sum(grepl("areal_weight", names(temp_dbf))*1)
+  if(check_weight < 1){
+    print("areal_weight not found within the data frame; recheck")
+  }
+  
   #temp_dbf <- subset(temp_dbf, FID_US_prj != -1)
   # temp_dbf <- subset(temp_dbf, FID_all_me != -1)
   initial_rows <- nrow(temp_dbf)
   #the above steps get rid of the empty data, which is not needed 
-  if(missing(merge_table)==FALSE){
-    if(missing(merge_id1)==TRUE){
+  if(exists('merge_table')==FALSE){
+    if(exists('merge_id1')==TRUE){
       stop("Extra data provided but merge ID 1 is missing")
-    }else if(missing(merge_id2)==TRUE){
+    }else if(exists('merge_id2')==TRUE){
       stop("Extra data provided but merge ID 2 is missing")
-    }else if(missing(merge_id1)==FALSE & missing(merge_id2)==FALSE){
+    }else if(exists('merge_id1')==FALSE & exists('merge_id2')==FALSE){
       #temp_dbf[, (colnames(temp_dbf) == merge_id1 ) == TRUE] <- as.character(temp_dbf[, (colnames(temp_dbf) == merge_id1 ) == TRUE])
       #merge_table[, (colnames(merge_table) == merge_id2 ) == TRUE] <- 
       #as.character(merge_table[, (colnames(merge_table) == merge_id1 ) == TRUE]) #ensures that the field is character for merge
       temp_dbf <- merge(temp_dbf, merge_table, by.x = merge_id1, by.y= merge_id2) # merges the temp_dbf field with a census table 
     } #provided by the user 
     print(nrow(temp_dbf))
-  }else{}
+  }else{print("No data to be merged on.")}
   print("Read in/merged data") # A check to ensure that the function made it this far 
   if(missing(id1)==FALSE & missing(id2)==FALSE){
     id_position1 <- match(id1, names(temp_dbf)) #These are the ID fields that will go onto make the dyads. The following match cmds
     id_position2 <- match(id2, names(temp_dbf))#finds the col position in the df of the ID fields  
     temp_dbf$DYAD_ID <- paste(temp_dbf[,id_position1], temp_dbf[,id_position2], sep = "_")
   }else{stop("Error: The ID fields necessary to create the DYAD ID is not provided.")}
-  temp_dbf$overlap1 <- temp_dbf$INT_AREA/temp_dbf$CB_AREA #the overlap between the 3-way intersection and CB area 
-  if(missing(pop_field)==FALSE){
-    pop_position <- match(pop_field, names(temp_dbf)) #finds the col position of the pop field, provided by user 
-    temp_dbf$pop_wt <- temp_dbf[, pop_position] * temp_dbf$overlap1 #the field for weighted population
-    print(summary(temp_dbf$overlap1))
-  }else{stop("A population field is not provided.")}
+  #temp_dbf$overlap1 <- temp_dbf$INT_AREA/temp_dbf$CB_AREA #the overlap between the 3-way intersection and CB area 
+  # should now just be areal_weight
+  temp_dbf$overlap1 <- temp_dbf$areal_weight # default; do not need 
+  #if(missing(pop_field)==FALSE){
+  #  pop_position <- match(pop_field, names(temp_dbf)) #finds the col position of the pop field, provided by user 
+  #  temp_dbf$pop_wt <- temp_dbf[, pop_position] * temp_dbf$overlap1 #the field for weighted population
+  #  print(summary(temp_dbf$overlap1))
+  #}else{stop("A population field is not provided.")}
   if(missing(census_fields)==FALSE){
     temp_var_name <- paste(census_fields, "wt", sep="_") #the names for the census fields provided by user. Takes the names and appends 
     var_position <- match(census_fields, names(temp_dbf)) # wt to the end. Now finds col position of census fields  
