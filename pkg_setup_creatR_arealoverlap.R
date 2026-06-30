@@ -27,6 +27,8 @@ document()
 
 devtools::build()
 setwd(parentDirectory)
+install.packages("arealOverlap_0.0.1.0000.tar.gz", type="source", repos=NULL, dependencies = TRUE)
+library(arealOverlap) # was able to use both stringr and yougov; good 
 #install("zipWRUext2")
 
 ### testing out fxns and such 
