@@ -76,6 +76,8 @@ overlap_dyad_creatr <- function(weight_output, id1, id2, census_fields){
     group_by(id2) %>%
     mutate(shp2pop=sum(pop_wt))
   overlap_dyad <- as.data.frame(overlap_dyad)
+  var_posiitons <- names(overlap_dyad)[grepl("shp|pop|dyad", names(overlap_dyad))]
+  overlap_dyad[var_posiitons] <- lapply(overlap_dyad[ ,var_posiitons],  as.numeric)                        
   
   
   return(overlap_dyad)
