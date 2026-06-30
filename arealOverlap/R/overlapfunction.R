@@ -74,7 +74,7 @@ overlapfunction <- function(filename1a, id1, id2, pop_field, merge_table,  merge
   }else{stop("Error: The ID fields necessary to create the DYAD ID is not provided.")}
   #temp_dbf$overlap1 <- temp_dbf$INT_AREA/temp_dbf$CB_AREA #the overlap between the 3-way intersection and CB area 
   # should now just be areal_weight
-  temp_dbf$overlap1 <- temp_dbf$areal_weight # default; do not need 
+  temp_dbf$overlap1 <- as.numeric(temp_dbf$areal_weight) # default; do not need 
   #if(missing(pop_field)==FALSE){
   #  pop_position <- match(pop_field, names(temp_dbf)) #finds the col position of the pop field, provided by user 
   #  temp_dbf$pop_wt <- temp_dbf[, pop_position] * temp_dbf$overlap1 #the field for weighted population
