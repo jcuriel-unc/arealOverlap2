@@ -40,6 +40,27 @@ library(arealOverlap)
 data_wd <- dirname(rstudioapi::getActiveDocumentContext()$path)
 setwd(data_wd)
 
+zctas <- arealOverlap::zctas #shapefile 1
+
+cbg_oh <- arealOverlap::cbg_oh#atomic level shapefile to act as grid
+
+oh_sen <- arealOverlap::oh_sen#shapefile 2
+
+test_overlap <-weight_overlap_new(shp1 = zctas, shp_atom = cbg_oh, shp2 = oh_sen, pop_field = "POP2010")
+head(test_overlap)
+
+
+test_output <- overlap_dyad_creatr(test_overlap, id1="ZCTA5CE10",id2="id", census_fields = c("WHITE","BLACK","MALES"))
+
+
+
+
+
+
+
+
+
+
 ### read in the data
 ## CBG 
 cbg_path <- list.files("data/blockgroups",full.names = T)
