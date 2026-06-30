@@ -196,5 +196,10 @@ overlapfunction <- function(filename1a, id1, id2, pop_field, merge_table,  merge
       colnames(temp_dbfA2)[colnames(temp_dbfA2)=="temp_fieldC"] <- new_namesC[i]
     }
   }else{}
+  
+  # identify whether the patterns found 
+  var_posiitons <- names(temp_dbfA2)[grepl("shp|pop|dyad", names(temp_dbfA2))]
+  temp_dbfA2[var_posiitons] <- lapply(temp_dbfA2[ ,var_posiitons],  as.numeric)                        
+
   return(temp_dbfA2)
 }
