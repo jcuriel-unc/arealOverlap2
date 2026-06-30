@@ -44,7 +44,7 @@ overlapfunction <- function(filename1a, id1, id2, pop_field, merge_table,  merge
   }else{temp_dbf <- read.dbf(filename1a)}
   
   #temp_dbf <- subset(temp_dbf, FID_US_prj != -1)
-  temp_dbf <- subset(temp_dbf, FID_all_me != -1)
+  # temp_dbf <- subset(temp_dbf, FID_all_me != -1)
   initial_rows <- nrow(temp_dbf)
   #the above steps get rid of the empty data, which is not needed 
   if(missing(merge_table)==FALSE){
