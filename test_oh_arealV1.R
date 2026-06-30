@@ -51,7 +51,7 @@ head(test_overlap)
 
 
 test_output <- overlap_dyad_creatr(test_overlap, id1="ZCTA5CE10",id2="id", census_fields = c("WHITE","BLACK","MALES"))
-
+head(test_output)
 
 
 
