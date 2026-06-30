@@ -1,6 +1,6 @@
 Package: arealOverlap
 Title: Areal interpolation through population overlap of polygon shapefiles. 
-Version: 0.0.0.9000
+Version: 0.0.1.0000
 Authors@R: c(person("John", "Curiel", role = c("aut", "trl", "cre"),
 		    email = "jcuriel.unc@gmail.com"),
              person("Tyler", "Steelman", role = c("aut", "trl"),
@@ -21,11 +21,11 @@ Description: The arealOverlap package works to solve how to weight population an
     could be correctly matched by knowing assigning the first level of geography to the second level of geography 
     based on the maximum population overlap. 	
 Depends: R (>= 2.12.0)
-Imports: dplyr, foreign, tidyr, stats
+Imports: dplyr, foreign, tidyr, stats, sp, sf, raster, geojsonio, areal
 License: General 
 Author: John Curiel [aut, trl, cre] (S original),
   Tyler Steelman [aut, trl]
 Maintainer: John Curiel <jcuriel.unc@gmail.com>
 Encoding: UTF-8
-Date/Publication: 2019-06-05 11:04:00 UTC
+Date/Publication: 2026-06-29 11:04:00 UTC
 RoxygenNote: 6.1.1
